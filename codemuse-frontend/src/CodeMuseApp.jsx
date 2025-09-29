@@ -7,7 +7,7 @@ import Waveform from "./components/Waveform";
 import { useAuth } from "./auth/AuthProvider";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
-const GEMINI_KEY = "AIzaSyBo9-uVRvjE5IzQD5IgzJxekZeUTAofEQA";
+const GEMINI_KEY = import.meta.env.VITE_GOOGLE_API_KEY ;
 
 export default function CodeMuseApp() {
   const { user, loading, getToken } = useAuth();
