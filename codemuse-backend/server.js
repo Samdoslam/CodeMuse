@@ -64,8 +64,7 @@ app.get("/api/users", requireAuth, async (req, res) => {
 
 // Connect to MongoDB
 mongoose.connect(
-  process.env.MONGO_URI ||
-    "mongodb+srv://houssameddineelfarr:JprqCaMuSPZ1Q8Kd@codemuse.idivbbb.mongodb.net/CodeMuse?retryWrites=true&w=majority",
+  process.env.MONGO_URI ,
   { useNewUrlParser: true, useUnifiedTopology: true }
 );
 
