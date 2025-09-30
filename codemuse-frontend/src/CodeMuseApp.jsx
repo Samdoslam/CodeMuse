@@ -6,8 +6,8 @@ import MicButton from "./components/MicButton";
 import Waveform from "./components/Waveform";
 import { useAuth } from "./auth/AuthProvider";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
-const GEMINI_KEY = import.meta.env.VITE_GOOGLE_API_KEY ;
+const API = import.meta.env.VITE_API_URL;
+const GEMINI_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 
 export default function CodeMuseApp() {
   const { user, loading, getToken } = useAuth();
@@ -58,7 +58,10 @@ export default function CodeMuseApp() {
     const fetchChats = async () => {
       try {
         const res = await fetch(`${API}/api/chats`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         });
         if (!res.ok) throw new Error("Failed to load chats");
         const data = await res.json();
@@ -74,10 +77,13 @@ export default function CodeMuseApp() {
   // ------------------ Fetch transcriptions ------------------
   useEffect(() => {
     if (!selectedChatId || !token) return;
-    const fetchTranscriptions = async () => {
+    const fetchTranscriptions = async () => {      
       try {
         const res = await fetch(`${API}/api/transcriptions/${selectedChatId}`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         });
         if (!res.ok) throw new Error("Failed to load transcriptions");
         const data = await res.json();

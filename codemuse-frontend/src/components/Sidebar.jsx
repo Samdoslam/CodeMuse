@@ -1,3 +1,4 @@
+// src/components/Sidebar.jsx
 import { useState } from "react";
 import {
   FiChevronLeft,
@@ -11,7 +12,7 @@ import {
 } from "react-icons/fi";
 import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+import Profile from "./profile";
 
 export default function Sidebar({
   isCollapsed,
@@ -21,15 +22,15 @@ export default function Sidebar({
   selectedChatId,
   setSelectedChatId,
   onNewChat,
-  user, // pass in user from parent
-  setUser, // function to update user on logout
-  openSignIn, // your custom login modal trigger
+  user,
   logout,
+  openSignIn,
 }) {
   const navigate = useNavigate();
   const [editingChatId, setEditingChatId] = useState(null);
   const [editValue, setEditValue] = useState("");
   const [showHistory, setShowHistory] = useState(true);
+  const [showProfile, setShowProfile] = useState(false);
 
   const startEdit = (chat) => {
     if (!chat?._id) return;
@@ -47,8 +48,8 @@ export default function Sidebar({
     }
 
     try {
-      const token = localStorage.getItem("token"); // JWT from custom auth
-      const res = await fetch(`http://localhost:5000/api/chats/${id}`, {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/chats/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -72,7 +73,7 @@ export default function Sidebar({
     if (!id) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/chats/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/chats/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -87,7 +88,7 @@ export default function Sidebar({
 
   const handleSignOut = () => {
     localStorage.removeItem("token");
-    logout(); // ✅ now defined
+    logout();
   };
 
   return (
@@ -100,7 +101,10 @@ export default function Sidebar({
       <div className="flex flex-col flex-1 overflow-hidden">
         <div className="flex items-center justify-between px-3 py-4 border-b border-white/10">
           {!isCollapsed && (
-            <h1 className="text-lg font-bold bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent cursor-pointer" onClick={() => navigate("/")}>
+            <h1
+              className="text-lg font-bold bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent cursor-pointer"
+              onClick={() => navigate("/")}
+            >
               Code Muse
             </h1>
           )}
@@ -113,6 +117,7 @@ export default function Sidebar({
           </button>
         </div>
 
+        {/* History Toggle */}
         <div className="px-2 mt-2">
           <button
             onClick={() => setShowHistory(!showHistory)}
@@ -136,7 +141,7 @@ export default function Sidebar({
           } mt-2 px-2 space-y-2`}
         >
           {chats.map((chat, index) => {
-            if (!chat || !chat._id) return null; // 🔥 Prevents crashes
+            if (!chat || !chat._id) return null;
 
             return (
               <div
@@ -215,10 +220,19 @@ export default function Sidebar({
         {user ? (
           !isCollapsed ? (
             <>
-              <div className="flex items-center gap-2">
-                <span className="text-sm truncate max-w-[100px]">
-                  {user.name || user.email}
+              <div className="flex items-center gap-2 relative">
+                <span
+                  onClick={() => setShowProfile(!showProfile)}
+                  className="cursor-pointer"
+                >
+                  {user?.name}
                 </span>
+
+                {showProfile && (
+                  <Profile
+                    onClose={() => setShowProfile(false)}
+                  />
+                )}
               </div>
               <button
                 onClick={handleSignOut}

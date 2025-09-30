@@ -25,7 +25,6 @@ export default function SignupPage() {
       setLoading(false);
 
       if (res.ok) {
-        setMsg("✅ Check your email to verify your account.");
         setTimeout(() => navigate("/login"), 2500);
       } else {
         setMsg(data.error || "Signup failed");

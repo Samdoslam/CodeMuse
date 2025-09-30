@@ -17,18 +17,14 @@ export default function LoginPage() {
     setLoading(true);
     setErr("");
 
-    try {
-      const user = await login(email, password); // login now returns user or throws
-      setLoading(false);
+    const success = await login(email, password);
 
-      if (user) {
-        navigate("/app"); // redirect to main app
-      } else {
-        setErr("Login failed");
-      }
-    } catch (error) {
-      setLoading(false);
-      setErr(error.message || "Login failed");
+    setLoading(false);
+
+    if (success) {
+      navigate("/app"); // redirect to main app
+    } else {
+      setErr("Invalid email or password");
     }
   };
 

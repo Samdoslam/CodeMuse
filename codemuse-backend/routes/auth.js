@@ -1,72 +1,95 @@
 // routes/auth.js
 import express from "express";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import User from "../models/users.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = express.Router();
-const jwtToken = process.env.JWT_SECRET;
-// Signup route
+
+// ----------------- SIGNUP -----------------
 router.post("/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({ error: "All fields are required" });
     }
 
-    // check if user exists
-    const existing = await User.findOne({ email });
-    if (existing) {
-      return res.status(400).json({ message: "Email already in use" });
-    }
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ error: "Email already exists" });
 
-    // hash password
-    const hashed = await bcrypt.hash(password, 10);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-    // create user
     const newUser = new User({
       name,
       email,
-      password: hashed,
+      password: hashedPassword,
+      // clerkUserId is optional, handled in schema
     });
 
     await newUser.save();
 
-    // generate token
-    const token = jwt.sign(
-      { sub: newUser._id, email: newUser.email },
-      process.env.JWT_ACCESS_SECRET,
-      { expiresIn: "7d" }
-    );
+    const token = jwt.sign({ _id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-    res.status(201).json({ user: newUser, token });
+    const userObj = newUser.toObject();
+    delete userObj.password;
+
+    res.json({ user: userObj, token });
   } catch (err) {
     console.error("Signup error:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+// ----------------- LOGIN -----------------
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-  if (!user) return res.status(400).json({ error: "Invalid credentials" });
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: "Email and password required" });
 
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ error: "Invalid credentials" });
 
-  // SIGN JWT properly
-const token = jwt.sign(
-  { id: user._id, email: user.email },
-  process.env.JWT_SECRET,
-  { expiresIn: "7d" }
-);
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
- res.json({
-  success: true,
-  user: { id: user.id, name: user.name, email: user.email },
-  token
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    const userObj = user.toObject();
+    delete userObj.password;
+
+    res.json({ user: userObj, token });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
+// ----------------- UPDATE PROFILE -----------------
+router.put("/update-profile", requireAuth, async (req, res) => {
+  try {
+    const { name, password } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    if (name) user.name = name;
+    if (password && password.trim() !== "") {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+    }
+
+    await user.save();
+
+    const userObj = user.toObject();
+    delete userObj.password;
+
+    res.json({ user: userObj });
+  } catch (err) {
+    console.error("Update profile error:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 export default router;
